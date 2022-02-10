@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Simple Music Script
 # Author: PietroVN
-# Requirements: youtube-dl (Play songs from links), mpv (Playing songs), socat (Sending commands to mpv)
+# Requirements: mpv,youtube-dl(or any fork | optional), sed, curl(optional), search(optional)
 # Usage:
 # 	music <command>
 #	play <song name>
