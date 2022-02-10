@@ -12,5 +12,5 @@ optional (only necessary if playing musics that you don't have downloaded):
 - search(already included)
 
 # how to install
-clone this repo
-run install.sh as root
+* clone this repo
+* run install.sh as root
