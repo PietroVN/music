@@ -86,7 +86,7 @@ pause() {
 	fi
 
 	# Apply
-	sed "s/STATE/${PAUSE}/g" <<<'{ "command": ["set_property", "pause", "STATE"] }' | socat - ${mpvsocket} > /dev/null
+	sed "s/STATE/${pause}/g" <<<'{ "command": ["set_property", "pause", "STATE"] }' | socat - ${mpvsocket} > /dev/null
 
 	# Save pause state
 	echo ${pause} > ${mpvpause}
@@ -101,6 +101,7 @@ play() {
 	[[ -f "${mpvmode}" ]] && rm "${mpvmode}"
 	[[ -f "${music_name}" ]] && rm "${music_name}"
 	[[ -f "${tmp_playlist}" ]] && rm "${tmp_playlist}"
+	[[ -f "${mpvpause}" ]] && rm ${mpvpause}
 
 	# Parameters
 	[[ ${command} ==  *"--shuffle"* ]] && shuffle=true
