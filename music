@@ -5,11 +5,11 @@
 # Usage:
 # 	music <command>
 #	play <song name>
-#	play FILE:<path to file>
-#	play FOLDER:<full path to folder> (Basically playlist)
-# 	play PLAYLIST:<full path to txt file>
-#	play URL:<url>
-#	play SEARCH:<song to search>
+#	play file:<path to file>
+#	play folder:<full path to folder> (Basically playlist)
+# 	play playlist:<full path to txt file>
+#	play url:<url>
+#	play search:<song to search>
 #	next
 #	prev
 # 	seek  <time>
