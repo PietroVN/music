@@ -54,7 +54,7 @@ info() {
 }
 
 seek() {
-	sed "s/SEEK/$(echo ${COMMAND} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  \
+	sed "s/SEEK/$(echo ${command} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  \
 									| socat - ${mpvsocket} > /dev/null
 }
 
@@ -285,6 +285,9 @@ case ${command} in
 	;;
 	"loop")
 		loop
+	;;
+	*"seek"*)
+		seek
 	;;
 	"info")
 		info
