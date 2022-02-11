@@ -38,14 +38,16 @@ stop_() {
 
 info() {
 	if [[ $(cat ${XDG_RUNTIME_DIR}/mode) == *"LOCAL"* ]]; then
-		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' | socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
+		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' \
+							| socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
 	else
 		echo "Music name:    $(cat ${XDG_RUNTIME_DIR}/name)"
 	fi
 }
 
 seek() {
-	sed "s/SEEK/$(echo ${COMMAND} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  | socat - ${XDG_RUNTIME_DIR}/mpvsocket > /dev/null
+	sed "s/SEEK/$(echo ${COMMAND} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  \
+										| socat - ${XDG_RUNTIME_DIR}/mpvsocket > /dev/null
 }
 
 advance() {
@@ -125,7 +127,8 @@ play() {
 	case ${MODE} in 
 		"LOCAL_FILE")
 			# Play song
-			mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${COMMAND} &
+			mpv --no-terminal --no-video \
+				--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${COMMAND} &
 
 			# Save mode
 			echo "LOCAL_FILE" >> ${XDG_RUNTIME_DIR}/mode
@@ -138,8 +141,12 @@ play() {
 			for f in ${COMMAND}*; do echo ${f} >> ${XDG_RUNTIME_DIR}/tmp_playlist.txt; done
 
 			# Play playlist
-			[[ ! "${SHUFFLE}" ]] && mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt &
-			[[   "${SHUFFLE}" ]] && mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket --shuffle  --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt &
+			[[ ! "${SHUFFLE}" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket \
+										--playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt & 2>/dev/null
+			[[   "${SHUFFLE}" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket \
+										--shuffle  --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt &
 
 			# Save mpde
 			echo "LOCAL_FOLDER" >> ${XDG_RUNTIME_DIR}/mode
@@ -154,10 +161,14 @@ play() {
 			done
 
 			# Play playlist
-			[[ ! "${SHUFFLE}" ]] && mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt &
-			[[   "${SHUFFLE}" ]] && mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket --shuffle  --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt &
+			[[ ! "${SHUFFLE}" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket \
+										--playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt & 2>/dev/null
+			[[   "${SHUFFLE}" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket \
+										--shuffle  --playlist=${XDG_RUNTIME_DIR}/tmp_playlist.txt & 2>/dev/null
 
-			# Save mpde
+			# Save mode
 			echo "LOCAL_FOLDER" >> ${XDG_RUNTIME_DIR}/mode
 		;;
 		"SEARCH")				
@@ -173,7 +184,8 @@ play() {
 			SONG=$(cat ${TMP_VIDEOS} | sed -n ${SONG_NUMBER}p )
 					
 			# Play song
-			mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${YOUTUBE}${SONG} &
+			mpv --no-terminal --no-video \
+				--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${YOUTUBE}${SONG} &
 
 			# Save mode
 			echo "SEARCH" >> ${XDG_RUNTIME_DIR}/mode
@@ -181,7 +193,8 @@ play() {
 		;;
 		*)
 			# Play song
-			mpv --no-terminal --no-video --input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${COMMAND} &
+			mpv --no-terminal --no-video \
+				--input-ipc-server=${XDG_RUNTIME_DIR}/mpvsocket ${COMMAND} &
 
 			# Save name
 			echo "URL" >> ${XDG_RUNTIME_DIR}/mode
@@ -207,11 +220,13 @@ play() {
 		;;
 		"LOCAL_PLAYLIST")
 			echo "Playlist size: $(cat ${COMMAND} | wc -l)"
-			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' | socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
+			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
+								| socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
 		;;
 		"LOCAL_FOLDER")
 			echo "Playlist size: $(ls ${COMMAND}/ | wc -l)"
-			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' | socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
+			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
+								| socat - ${XDG_RUNTIME_DIR}/mpvsocket) | sed 's/\".*//')"
 		;;
 		*)
 			echo "Now Playing: $(basename ${COMMAND})"
@@ -276,6 +291,9 @@ case ${COMMAND} in
 	;;
 	"loop")
 		loop
+	;;
+	"info")
+		info
 	;;
 	"stop")
 		stop_
