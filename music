@@ -164,11 +164,11 @@ play() {
 			command=$(sed 's/search://g' <<< ${command})
 
 			# Use search to list musics
-			search youtube:${command}
+			search _youtube:${command}
 			echo ""
 
 			# Ask the user to choose a song
-			echo "Choose music:"
+			echo "Enter your choice:"
 			read song_number
 
 			# Select song url 
