@@ -4,23 +4,22 @@
 # Requirements: mpv,youtube-dl(or any fork | optional), sed, curl(optional), search(optional)
 # Usage:
 # 	music <command>
-#	play <song name>
-#	play file:<path to file>
-#	play folder:<full path to folder> (Basically playlist)
-# 	play playlist:<full path to txt file>
-#	play url:<url>
-#	play search:<song to search>
-#	next
-#	prev
-# 	seek  <time>
-# 	advance (will advance music 5 seconds)
-# 	return (will return music 5 seconds)
-#	pause
-# 	loop
-# 	quit
-# 	stop
-# 	e.g music play hollow knight ost
-
+#	play file:<path to file>				| Play local music file
+#	play folder:<full path to folder> 		| Put all songs in a folder on a temp playlist
+# 	play playlist:<full path to txt file>	| Use plain text file as playlist
+#	play url:<url>							| Play specific url
+#	play search:<song to search>			| Search for specific song online
+#	next 									| Skip current song
+#	prev 									| Return to previous song
+# 	seek  <time> 							| Seek for the specified time
+# 	advance									| Advance music 5 seconds
+# 	return 									| Return music 5 seconds
+#	pause									| Pause music
+# 	loop									| Loop music (will stay active until reboot or you disable it)
+# 	stop									| Stop current song						
+# Parameters:
+# --shuffle									| Works with 'playlist:' and 'folder:' start playlist in a random order
+# --first									| Works with 'search:' play the first song returned from search
 # Include search
 . /usr/local/bin/search
 
@@ -104,8 +103,9 @@ play() {
 	[[ -f "${mpvpause}" ]] && rm ${mpvpause}
 
 	# Parameters
-	[[ ${command} ==  *"--shuffle"* ]] && shuffle=true
-	
+	[[ ${command} == *"--shuffle"* ]] && shuffle=true
+	[[ ${command} == *"--first"* ]] && first=true
+
 	# Clear $command
 	command=$(sed s/play//g <<< ${command})
 
@@ -164,16 +164,19 @@ play() {
 			command=$(sed 's/search://g' <<< ${command})
 
 			# Use search to list musics
-			search _youtube:${command}
+			search _youtube:${command} &> /dev/null
 			echo ""
 
 			# Ask the user to choose a song
-			echo "Enter your choice:"
-			read song_number
+			[[ -z "${first}" ]] && echo "Enter your choice:"
+			[[ -z "${first}" ]] && read song_number
 
-			# Select song url 
-			song=$(cat ${tmp_videos} | sed -n ${song_number}p )
-					
+			# Pick first song 
+			[[ ! -z "${first}" ]] && song_number=1
+
+			# Select song url
+			song=$(cat ${tmp_videos} | sed -n ${song_number}p)
+
 			# Play song
 			mpv --no-terminal --no-video \
 				--input-ipc-server=${mpvsocket} ${youtube_url}${song} &
