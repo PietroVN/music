@@ -20,6 +20,7 @@
 # Parameters:
 # --shuffle									| Works with 'playlist:' and 'folder:' start playlist in a random order
 # --first									| Works with 'search:' play the first song returned from search
+
 # Include search
 . /usr/local/bin/search
 
