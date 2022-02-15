@@ -33,7 +33,7 @@ mpvpause="${XDG_RUNTIME_DIR}/mpvpause"
 mpvloop="${XDG_RUNTIME_DIR}/mpvloop"
 mpvmode="${XDG_RUNTIME_DIR}/mpvmode"
 tmp_playlist="${XDG_RUNTIME_DIR}/tmp_playlist.txt"
-music_name_dir="${XDG_RUNTIME_DIR}/name"
+music_name_path="${XDG_RUNTIME_DIR}/name"
 
 # Youtube (Youtube downloader)
 yt=youtube-dl
@@ -49,7 +49,7 @@ info() {
 		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 							| socat - ${mpvsocket}) | sed 's/\".*//')"
 	else
-		echo "Music name:    $(cat ${music_name_dir})"
+		echo "Music name:    $(cat ${music_name_path})"
 	fi
 }
 
@@ -165,7 +165,7 @@ play() {
 			command=$(sed 's/search//g' <<< ${command})
 
 			# Use search to list musics
-			[[ -z ${first} ]] || search _youtube:${command} &> /dev/null
+			[[ -z ${first} ]] || search _youtube:${command} 2 > /dev/null
 			[[ -z ${first} ]] && search _youtube:${command}
 			[[ -z ${first} ]] && echo ""
 
@@ -174,7 +174,7 @@ play() {
 			[[ -z "${first}" ]] && read song_number
 
 			# Pick first song 
-			[[ ! -z "${first}" ]] && song_number=1
+			[[ -z "${first}" ]] || song_number=1
 
 			# Select song url
 			song=$(cat ${tmp_videos_list} | sed -n ${song_number}p)
@@ -185,7 +185,7 @@ play() {
 
 			# Misc
 			echo "search" > ${mpvmode}
-			echo "$(cat ${tmp_video_titles_dir} | sed -n ${song_number}p)" > ${music_name_dir}
+			echo "$(cat ${tmp_video_titles_list} | sed -n ${song_number}p)" > ${music_name_path}
 		;;
 		*"url"*)
 			# Clear command
@@ -212,10 +212,10 @@ play() {
 	# Informs the user
 	case $(cat ${mpvmode}) in 
 		"search")
-			echo "Now Playing: $(cat ${music_name_dir})"	
+			echo "Now Playing: $(cat ${music_name_path})"	
 		;;
 		"url")
-			echo "Now Playing: $(cat ${music_name_dir})"
+			echo "Now Playing: $(cat ${music_name_path})"
 		;;
 		"playlist")
 			echo "Playlist size: $(cat ${command} | wc -l)"
