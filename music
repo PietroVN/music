@@ -177,7 +177,7 @@ play() {
 			[[ ! -z "${first}" ]] && song_number=1
 
 			# Select song url
-			song=$(cat ${tmp_videos_dir} | sed -n ${song_number}p)
+			song=$(cat ${tmp_videos_list} | sed -n ${song_number}p)
 
 			# Play song
 			mpv --no-terminal --no-video \
