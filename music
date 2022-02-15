@@ -4,11 +4,11 @@
 # Requirements: mpv,youtube-dl(or any fork | optional), sed, curl(optional), search(optional)
 # Usage:
 # 	music <command>
-#	play file:<path to file>				| Play local music file
-#	play folder:<full path to folder> 		| Put all songs in a folder on a temp playlist
-# 	play playlist:<full path to txt file>	| Use plain text file as playlist
-#	play url:<url>							| Play specific url
-#	play search:<song to search>			| Search for specific song online
+#	play file <path to file>				| Play local music file
+#	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist
+# 	play playlist <full path to txt file>	| Use plain text file as playlist
+#	play url <url>							| Play specific url
+#	play search <song to search>			| Search for specific song online
 #	next 									| Skip current song
 #	prev 									| Return to previous song
 # 	seek  <time> 							| Seek for the specified time
@@ -33,7 +33,7 @@ mpvpause="${XDG_RUNTIME_DIR}/mpvpause"
 mpvloop="${XDG_RUNTIME_DIR}/mpvloop"
 mpvmode="${XDG_RUNTIME_DIR}/mpvmode"
 tmp_playlist="${XDG_RUNTIME_DIR}/tmp_playlist.txt"
-music_name="${XDG_RUNTIME_DIR}/name"
+music_name_dir="${XDG_RUNTIME_DIR}/name"
 
 # Youtube (Youtube downloader)
 yt=youtube-dl
@@ -45,11 +45,11 @@ stop_() {
 }
 
 info() {
-	if [[ $(cat ${XDG_RUNTIME_DIR}/mode) == *"LOCAL"* ]]; then
+	if [[ $(cat ${mpvmode}) == *"LOCAL"* ]]; then
 		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 							| socat - ${mpvsocket}) | sed 's/\".*//')"
 	else
-		echo "Music name:    $(cat ${music_name})"
+		echo "Music name:    $(cat ${music_name_dir})"
 	fi
 }
 
@@ -111,20 +111,20 @@ play() {
 	command=$(sed s/play//g <<< ${command})
 
 	case ${command} in 
-		*"file:"*)
+		*"file"*)
 			# Clear command
-			command=$(sed 's/file://g' <<< ${command})
+			command=$(sed 's/file//g' <<< ${command})
 
 			# Play song
 			mpv --no-terminal --no-video \
 				--input-ipc-server=${mpvsocket} ${command} &
 
 			# Save mode
-			echo "file" >> ${mpvmode}
+			echo "file" > ${mpvmode}
 		;;
-		*"folder:"*)
+		*"folder"*)
 			# Clear command
-			command=$(sed 's/folder://g' <<< ${command})
+			command=$(sed 's/folder//g' <<< ${command})
 
 			# Generate a tmp playlist with files listed on directory
 			for f in ${command}*; do echo ${f} >> ${tmp_playlist}; done
@@ -138,11 +138,11 @@ play() {
 										--shuffle  --playlist=${tmp_playlist} &
 
 			# Save mpde
-			echo "folder" >> ${mpvmode}
+			echo "folder" > ${mpvmode}
 		;;
-		*"playlist:"*)
+		*"playlist"*)
 			# Clear command
-			command=$(sed 's/playlist://g' <<< ${command})
+			command=$(sed 's/playlist//g' <<< ${command})
 
 			# Dump command playlist into tmp playlist (IDK why mpv don't work when using the playlist specified by the command)
 			for f in $(cat ${command}); do
@@ -158,11 +158,11 @@ play() {
 										--shuffle  --playlist=${tmp_playlist} & 2>/dev/null
 
 			# Save mode
-			echo "playlist" >> ${mpvmode}
+			echo "playlist" > ${mpvmode}
 		;;
-		*"search:"*)
+		*"search"*)
 			# Clear command
-			command=$(sed 's/search://g' <<< ${command})
+			command=$(sed 's/search//g' <<< ${command})
 
 			# Use search to list musics
 			search _youtube:${command} &> /dev/null
@@ -183,20 +183,20 @@ play() {
 				--input-ipc-server=${mpvsocket} ${youtube_url}${song} &
 
 			# Misc
-			echo "search" >> ${mpvmode}
-			echo "$(cat ${tmp_video_titles_dir} | sed -n ${song_number}p)" >> ${music_name}
+			echo "search" > ${mpvmode}
+			echo "$(cat ${tmp_video_titles_dir} | sed -n ${song_number}p)" > ${music_name_dir}
 		;;
-		*"url:"*)
+		*"url"*)
 			# Clear command
-			command=$(sed 's/url://g' <<< ${command})
+			command=$(sed 's/url//g' <<< ${command})
 
 			# Play song
 			mpv --no-terminal --no-video \
 				--input-ipc-server=${mpvsocket} ${command} &
 
 			# Save name
-			echo "url" >> ${mpvmode}
-			echo "$(${yt} --get-title ${command})" >> ${song_name}
+			echo "url" > ${mpvmode}
+			echo "$(${yt} --get-title ${command})" > ${music_name_dir}
 		;;
 	esac
 
@@ -211,10 +211,10 @@ play() {
 	# Informs the user
 	case $(cat ${mpvmode}) in 
 		"search")
-			echo "Now Playing: $(cat ${tmp_video_titles} | sed -n ${song_number}p)"	
+			echo "Now Playing: $(cat ${music_name_dir})"	
 		;;
 		"url")
-			echo "Now Playing: $(${yt} --get-title ${command})"
+			echo "Now Playing: $(cat ${music_name_dir})"
 		;;
 		"playlist")
 			echo "Playlist size: $(cat ${command} | wc -l)"
