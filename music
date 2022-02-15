@@ -165,8 +165,9 @@ play() {
 			command=$(sed 's/search//g' <<< ${command})
 
 			# Use search to list musics
-			search _youtube:${command} &> /dev/null
-			echo ""
+			[[ -z ${first} ]] || search _youtube:${command} &> /dev/null
+			[[ -z ${first} ]] && search _youtube:${command}
+			[[ -z ${first} ]] && echo ""
 
 			# Ask the user to choose a song
 			[[ -z "${first}" ]] && echo "Enter your choice:"
