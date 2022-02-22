@@ -283,10 +283,10 @@ case ${command} in
 		return_
 	;;
 	"previous")
-		previous
+		prev
 	;;
 	"prev")
-		previous
+		prev
 	;;
 	"loop")
 		loop
