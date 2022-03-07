@@ -76,9 +76,6 @@ prev() {
 }
 
 pause() {
-	# Create pause file
-	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
-
 	# Checks to determine if music will be paused or unpaused
 	if [[ $(cat "$mpvpause" | wc -l) -le "0" ]]; then
 		pause=yes
@@ -96,6 +93,9 @@ pause() {
 }
 
 play() {
+	# Create pause file
+	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
+
 	# Kill previous mpv instance
 	[[ $(pidof mpv) ]] && killall "mpv"
 
@@ -135,7 +135,7 @@ play() {
 			# Play playlist
 			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
-										--playlist="$tmp_playlist" & 2> "/dev/null"
+										--playlist="$tmp_playlist" & 2>/dev/null
 			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
 										--shuffle  --playlist="$tmp_playlist" &
@@ -158,7 +158,7 @@ play() {
 										--playlist="$tmp_playlist" & 2>/dev/null
 			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
-										--shuffle  --playlist="$tmp_playlist" & 2>" /dev/null"
+										--shuffle  --playlist="$tmp_playlist" & 2>/dev/null
 
 			# Save mode
 			echo "playlist" > "$mpvmode"
@@ -168,7 +168,7 @@ play() {
 			command=$(sed 's/search//g' <<< "$command")
 
 			# Use search to list musics
-			[[ -z "$first" ]] || search _youtube:"$command" 2> "/dev/null"
+			[[ -z "$first" ]] || search _youtube:"$command" 2>/dev/null
 			[[ -z "$first" ]] && search _youtube:"$command"
 			[[ -z "$first" ]] && echo ""
 
