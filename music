@@ -28,68 +28,68 @@
 command=$@
 
 # Enviroment
-mpvsocket="${XDG_RUNTIME_DIR}/mpvsocket"
-mpvpause="${XDG_RUNTIME_DIR}/mpvpause"
-mpvloop="${XDG_RUNTIME_DIR}/mpvloop"
-mpvmode="${XDG_RUNTIME_DIR}/mpvmode"
-tmp_playlist="${XDG_RUNTIME_DIR}/tmp_playlist.txt"
-music_name_path="${XDG_RUNTIME_DIR}/name"
+mpvsocket="$XDG_RUNTIME_DIR/music-socket"
+mpvpause="$XDG_RUNTIME_DIR/music-paused"
+mpvloop="$XDG_RUNTIME_DIR/music-loop"
+mpvmode="$XDG_RUNTIME_DIR/music-mode"
+tmp_playlist="$XDG_RUNTIME_DIR/tmp_playlist.txt"
+music_name_path="$XDG_RUNTIME_DIR/name"
 
 # Youtube (Youtube downloader)
 yt=youtube-dl
 MUSICS_FOLDER=~/musics
 
 stop_() {
-	echo '{ "command": ["quit"] }' | socat - ${mpvsocket} > /dev/null
-	[[ -f "${XDG_RUNTIME_DIR}/mpvpause" ]] && rm "${mpvpause}"
+	echo '{ "command": ["quit"] }' | socat - "$mpvsocket" > "/dev/null"
+	[[ -f "$XDG_RUNTIME_DIR/mpvpause" ]] && rm "$mpvpause"
 }
 
 info() {
-	if [[ $(cat ${mpvmode}) == *"LOCAL"* ]]; then
+	if [[ $(cat "$mpvmode") == *"LOCAL"* ]]; then
 		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' \
-							| socat - ${mpvsocket}) | sed 's/\".*//')"
+							| socat - "$mpvsocket") | sed 's/\".*//')"
 	else
-		echo "Music name:    $(cat ${music_name_path})"
+		echo "Music name:    $(cat "$music_name_path")"
 	fi
 }
 
 seek() {
 	sed "s/SEEK/$(echo ${command} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  \
-									| socat - ${mpvsocket} > /dev/null
+									| socat - "$mpvsocket" > "/dev/null"
 }
 
 advance() {
-	echo '{ "command": ["seek", "+5"] }' | socat - ${mpvsocket} > /dev/null
+	echo '{ "command": ["seek", "+5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Advanced: 5 seconds"
 }
 
 next() {		
-	echo 'playlist-next' | socat - ${mpvsocket} > /dev/null
+	echo 'playlist-next' | socat - "$mpvsocket" > "/dev/null"
 }
 return_() {
-	echo '{ "command": ["seek", "-5"] }' | socat - ${mpvsocket} > /dev/null
+	echo '{ "command": ["seek", "-5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Returned: 5 seconds"
 }
 
 prev() {
-	echo 'playlist-prev' | socat - ${mpvsocket} > /dev/null
+	echo 'playlist-prev' | socat - "$mpvsocket" > "/dev/null"
 }
 
 pause() {
 	# Checks to determine if music will be paused or unpaused
-	if [[ ! -f ${mpvpause} ]]; then
+	if [[ $(cat "$mpvpause" | wc -l) -le "0" ]]; then
 		pause=yes
-	elif [[ $(cat ${mpvpause}) == "yes" ]]; then
+	elif [[ $(cat "$mpvpause") == "yes" ]]; then
 		pause=no
 	else
 		pause=yes
 	fi
 
 	# Apply
-	sed "s/STATE/${pause}/g" <<<'{ "command": ["set_property", "pause", "STATE"] }' | socat - ${mpvsocket} > /dev/null
+	sed "s/STATE/${pause}/g" <<<'{ "command": ["set_property", "pause", "STATE"] }' | socat - "$mpvsocket" > "/dev/null"
 
 	# Save pause state
-	echo ${pause} > ${mpvpause}
+	echo "$pause" > "$mpvpause"
 }
 
 play() {
@@ -97,107 +97,107 @@ play() {
 	[[ $(pidof mpv) ]] && killall "mpv"
 
 	# Clear previous files
-	[[ -f "${mpvsocket}" ]] && rm "${mpvsocket}"
-	[[ -f "${mpvmode}" ]] && rm "${mpvmode}"
-	[[ -f "${music_name}" ]] && rm "${music_name}"
-	[[ -f "${tmp_playlist}" ]] && rm "${tmp_playlist}"
-	[[ -f "${mpvpause}" ]] && rm ${mpvpause}
+	[[ -f "$mpvsocket" ]] && rm "$mpvsocket"
+	[[ -f "$mpvmode" ]] && rm "$mpvmode"
+	[[ -f "$music_name" ]] && rm "$music_name"
+	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
+	[[ -f "$mpvpause" ]] && rm "$mpvpause"
 
 	# Parameters
-	[[ ${command} == *"--shuffle"* ]] && shuffle=true
-	[[ ${command} == *"--first"* ]] && first=true
+	[[ "$command" == *"--shuffle"* ]] && shuffle=true
+	[[ "$command" == *"--first"* ]] && first=true
 
 	# Clear $command
-	command=$(sed s/play//g <<< ${command})
+	command=$(sed s/play//g <<< "$command")
 
 	case ${command} in 
 		*"file"*)
 			# Clear command
-			command=$(sed 's/file//g' <<< ${command})
+			command=$(sed 's/file//g' <<< "$command")
 
 			# Play song
 			mpv --no-terminal --no-video \
-				--input-ipc-server=${mpvsocket} ${command} &
+				--input-ipc-server="$mpvsocket" "$command" &
 
 			# Save mode
-			echo "file" > ${mpvmode}
+			echo "file" > "$mpvmode"
 		;;
 		*"folder"*)
 			# Clear command
-			command=$(sed 's/folder//g' <<< ${command})
+			command=$(sed 's/folder//g' <<< "$command")
 
 			# Generate a tmp playlist with files listed on directory
-			for f in ${command}*; do echo ${f} >> ${tmp_playlist}; done
+			for f in $command*; do echo "$f" >> "$tmp_playlist"; done
 
 			# Play playlist
-			[[ ! "${shuffle}" ]] && mpv --no-terminal --no-video \
-										--input-ipc-server=${mpvsocket} \
-										--playlist=${tmp_playlist} & 2>/dev/null
-			[[   "${shuffle}" ]] && mpv --no-terminal --no-video \
-										--input-ipc-server=${mpvsocket} \
-										--shuffle  --playlist=${tmp_playlist} &
+			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server="$mpvsocket" \
+										--playlist="$tmp_playlist" & 2> "/dev/null"
+			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server="$mpvsocket" \
+										--shuffle  --playlist="$tmp_playlist" &
 
 			# Save mpde
-			echo "folder" > ${mpvmode}
+			echo "folder" > "$mpvmode"
 		;;
 		*"playlist"*)
 			# Clear command
-			command=$(sed 's/playlist//g' <<< ${command})
+			command=$(sed 's/playlist//g' <<< "$command")
 
 			# Dump command playlist into tmp playlist (IDK why mpv don't work when using the playlist specified by the command)
-			for f in $(cat ${command}); do
-				echo ${f} >> ${tmp_playlist}
+			for f in $(cat "$command"); do
+				echo "$f" >> "$tmp_playlist"
 			done
 
 			# Play playlist
-			[[ ! "${shuffle}" ]] && mpv --no-terminal --no-video \
-										--input-ipc-server=${mpvsocket} \
-										--playlist=${tmp_playlist} & 2>/dev/null
-			[[   "${shuffle}" ]] && mpv --no-terminal --no-video \
-										--input-ipc-server=${mpvsocket} \
-										--shuffle  --playlist=${tmp_playlist} & 2>/dev/null
+			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server="$mpvsocket" \
+										--playlist="$tmp_playlist" & 2>/dev/null
+			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
+										--input-ipc-server="$mpvsocket" \
+										--shuffle  --playlist="$tmp_playlist" & 2>" /dev/null"
 
 			# Save mode
-			echo "playlist" > ${mpvmode}
+			echo "playlist" > "$mpvmode"
 		;;
 		*"search"*)
 			# Clear command
-			command=$(sed 's/search//g' <<< ${command})
+			command=$(sed 's/search//g' <<< "$command")
 
 			# Use search to list musics
-			[[ -z ${first} ]] || search _youtube:${command} 2 > /dev/null
-			[[ -z ${first} ]] && search _youtube:${command}
-			[[ -z ${first} ]] && echo ""
+			[[ -z "$first" ]] || search _youtube:"$command" 2> "/dev/null"
+			[[ -z "$first" ]] && search _youtube:"$command"
+			[[ -z "$first" ]] && echo ""
 
 			# Ask the user to choose a song
-			[[ -z "${first}" ]] && echo "Enter your choice:"
-			[[ -z "${first}" ]] && read song_number
+			[[ -z "$first" ]] && echo "Enter your choice:"
+			[[ -z "$first" ]] && read song_number
 
 			# Pick first song 
-			[[ -z "${first}" ]] || song_number=1
+			[[ -z "$first" ]] || song_number=1
 
 			# Select song url
-			song=$(cat ${tmp_videos_list} | sed -n ${song_number}p)
+			song=$(cat "$tmp_videos_list" | sed -n "$song_number"p)
 
 			# Play song
 			mpv --no-terminal --no-video \
-				--input-ipc-server=${mpvsocket} ${youtube_url}${song} &
+				--input-ipc-server="$mpvsocket" "$youtube_url""$song" &
 
 			# Misc
-			echo "search" > ${mpvmode}
-			echo "$(cat ${tmp_video_titles_list} | sed -n ${song_number}p)" > ${music_name_path}
+			echo "search" > "$mpvmode"
+			echo "$(cat "$tmp_video_titles_list" | sed -n "$song_number"p)" > "$music_name_path"
 		;;
 		*"url"*)
 			# Clear command
-			command=$(sed 's/url//g' <<< ${command})
+			command=$(sed 's/url//g' <<< "$command")
 
 			# Play song
 			mpv --no-terminal --no-video \
-				--input-ipc-server=${mpvsocket} ${command} &
+				--input-ipc-server="$mpvsocket" "$command" &
 
 			# Save name
-			echo "url" > ${mpvmode}
-			echo "$(${yt} --get-title ${command})" > ${music_name_dir}
+			echo "url" > "$mpvmode"
+			echo "$("$yt" --get-title "$command")" > "$music_name_dir"
 		;;
 	esac
 
@@ -205,68 +205,68 @@ play() {
 	sleep 3
 
 	# Re-enable previous options
-	if [[ -f ${mpvloop} && $(cat ${mpvloop}) == "yes" ]]; then
-		echo '{ "command": ["set_property", "loop", "yes"] }' | socat - ${mpvsocket} > /dev/null
+	if [[ -f "$mpvloop" && $(cat "$mpvloop") == "yes" ]]; then
+		echo '{ "command": ["set_property", "loop", "yes"] }' | socat - "$mpvsocket" > "/dev/null"
 	fi
 
 	# Informs the user
-	case $(cat ${mpvmode}) in 
+	case $(cat "$mpvmode") in 
 		"search")
-			echo "Now Playing: $(cat ${music_name_path})"	
+			echo "Now Playing: $(cat "$music_name_path")"	
 		;;
 		"url")
-			echo "Now Playing: $(cat ${music_name_path})"
+			echo "Now Playing: $(cat "$music_name_path")"
 		;;
 		"playlist")
-			echo "Playlist size: $(cat ${command} | wc -l)"
+			echo "Playlist size: $(cat "$command" | wc -l)"
 			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
-								| socat - ${mpvsocket}) | sed 's/\".*//')"
+								| socat - "$mpvsocket") | sed 's/\".*//')"
 		;;
 		"folder")
-			echo "Playlist size: $(ls ${command}/ | wc -l)"
+			echo "Playlist size: $(ls "$command"/ | wc -l)"
 			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
-								| socat - ${mpvsocket}) | sed 's/\".*//')"
+								| socat - "$mpvsocket") | sed 's/\".*//')"
 		;;
 		*)
-			echo "Now Playing: $(basename ${command})"
+			echo "Now Playing: $(basename "$command")"
 		;;
 	esac
 }
 
 loop() {
 	# Conditions to determine if loop will be enabled or disabled
-	if [[ ! -f ${mpvloop} ]]; then
+	if [[ ! -f "$mpvloop" ]]; then
 		loop=yes
-	elif [[ $(cat ${mpvloop}) == "yes" ]]; then
+	elif [[ $(cat "$mpvloop") == "yes" ]]; then
 		loop=no
 	else
 		loop=yes
 	fi
 
 	# Apply
-	sed "s/STATE/${loop}/g" <<<'{ "command": ["set_property", "loop", "STATE"] }' | socat - ${mpvsocket} > /dev/null
+	sed "s/STATE/$loop/g" <<<'{ "command": ["set_property", "loop", "STATE"] }' | socat - "$mpvsocket" > /dev/null
 
 	# Save loop state
-	echo ${loop} > ${mpvloop}
+	echo "$loop" > "$mpvloop"
 
 	# Informs the user
-	echo "Loop: ${loop}"
+	echo "Loop: $loop"
 }
 
 # Check if command is empty
-if [[ -z ${command} ]]; then
+if [[ -z "$command" ]]; then
 	echo "You need to enter a music name/link or a command"
 	exit
 fi
 
 # Check if mpv is playing anything
-if [[ ${command} != *"play"* && ! $(pgrep -f mpv) ]]; then
+if [[ "$command" != *"play"* && ! $(pgrep -f mpv) ]]; then
 	echo "No MPV process detected, first you need to run: music play <music name/link>"
 	exit
 fi
 
 # Command
-case ${command} in
+case "$command" in
 	*"play"*)
 		play
 	;;
