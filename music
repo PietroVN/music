@@ -76,6 +76,9 @@ prev() {
 }
 
 pause() {
+	# Create pause file
+	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
+
 	# Checks to determine if music will be paused or unpaused
 	if [[ $(cat "$mpvpause" | wc -l) -le "0" ]]; then
 		pause=yes
