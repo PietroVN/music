@@ -93,9 +93,6 @@ pause() {
 }
 
 play() {
-	# Create pause file
-	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
-
 	# Kill previous mpv instance
 	[[ $(pidof mpv) ]] && killall "mpv"
 
@@ -105,6 +102,9 @@ play() {
 	[[ -f "$music_name" ]] && rm "$music_name"
 	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
 	[[ -f "$mpvpause" ]] && rm "$mpvpause"
+
+	# Create pause file
+	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
 
 	# Parameters
 	[[ "$command" == *"--shuffle"* ]] && shuffle=true
