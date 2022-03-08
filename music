@@ -41,7 +41,13 @@ MUSICS_FOLDER=~/musics
 
 stop_() {
 	echo '{ "command": ["quit"] }' | socat - "$mpvsocket" > "/dev/null"
-	[[ -f "$XDG_RUNTIME_DIR/mpvpause" ]] && rm "$mpvpause"
+
+	# Clear previous files
+	[[ -f "$mpvsocket" ]] && rm "$mpvsocket"
+	[[ -f "$mpvmode" ]] && rm "$mpvmode"
+	[[ -f "$music_name" ]] && rm "$music_name"
+	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
+	[[ -f "$mpvpause" ]] && rm "$mpvpause"
 }
 
 info() {
