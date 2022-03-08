@@ -135,7 +135,7 @@ play() {
 			# Play playlist
 			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
-										--playlist="$tmp_playlist" & 2>/dev/null
+										--playlist="$tmp_playlist" & 2> "/dev/null"
 			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
 										--shuffle  --playlist="$tmp_playlist" &
@@ -155,10 +155,10 @@ play() {
 			# Play playlist
 			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
-										--playlist="$tmp_playlist" & 2>/dev/null
+										--playlist="$tmp_playlist" & 2> "/dev/null"
 			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
-										--shuffle  --playlist="$tmp_playlist" & 2>/dev/null
+										--shuffle  --playlist="$tmp_playlist" & 2> "/dev/null"
 
 			# Save mode
 			echo "playlist" > "$mpvmode"
@@ -168,7 +168,7 @@ play() {
 			command=$(sed 's/search//g' <<< "$command")
 
 			# Use search to list musics
-			[[ -z "$first" ]] || search _youtube:"$command" 2>/dev/null
+			[[ -z "$first" ]] || search _youtube:"$command" > "/dev/null"
 			[[ -z "$first" ]] && search _youtube:"$command"
 			[[ -z "$first" ]] && echo ""
 
@@ -247,7 +247,7 @@ loop() {
 	fi
 
 	# Apply
-	sed "s/STATE/$loop/g" <<<'{ "command": ["set_property", "loop", "STATE"] }' | socat - "$mpvsocket" > /dev/null
+	sed "s/STATE/$loop/g" <<<'{ "command": ["set_property", "loop", "STATE"] }' | socat - "$mpvsocket" > "/dev/null"
 
 	# Save loop state
 	echo "$loop" > "$mpvloop"
