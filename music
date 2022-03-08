@@ -100,7 +100,7 @@ pause() {
 
 play() {
 	# Kill previous mpv instance
-	[[ $(pidof mpv) ]] && killall "mpv"
+	echo '{ "command": ["quit"] }' | socat - "$mpvsocket" > "/dev/null"
 
 	# Clear previous files
 	[[ -f "$mpvsocket" ]] && rm "$mpvsocket"
