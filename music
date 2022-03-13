@@ -6,7 +6,7 @@
 # 	music <command>
 #	play file <path to file>				| Play local music file
 #	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist
-# 	play playlist <full path to txt file>	| Use plain text file as playlist
+# 	play playlist <full path to txt file>	| Use plain text file or a online playlist (auto detected!)
 #	play url <url>							| Play specific url
 #	play search <song to search>			| Search for specific song online
 #	next 									| Skip current song
@@ -32,6 +32,7 @@ mpvsocket="$XDG_RUNTIME_DIR/music-socket"
 mpvpause="$XDG_RUNTIME_DIR/music-paused"
 mpvloop="$XDG_RUNTIME_DIR/music-loop"
 mpvmode="$XDG_RUNTIME_DIR/music-mode"
+#musicd="/usr/local/bin/musicd"
 tmp_playlist="$XDG_RUNTIME_DIR/tmp_playlist.txt"
 music_name_path="$XDG_RUNTIME_DIR/name"
 
@@ -48,6 +49,11 @@ stop_() {
 	[[ -f "$music_name" ]] && rm "$music_name"
 	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
 	[[ -f "$mpvpause" ]] && rm "$mpvpause"
+
+	# Kill musicd
+	for f in $(pgrep -a bash | grep -e "musicd" | awk '{print $1}'); do
+		kill "$f"
+	done
 }
 
 info() {
@@ -72,6 +78,7 @@ advance() {
 next() {		
 	echo 'playlist-next' | socat - "$mpvsocket" > "/dev/null"
 }
+
 return_() {
 	echo '{ "command": ["seek", "-5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Returned: 5 seconds"
@@ -109,6 +116,11 @@ play() {
 	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
 	[[ -f "$mpvpause" ]] && rm "$mpvpause"
 
+	# Kill previous musicd
+	for f in $(pgrep -a bash | grep -e "musicd" | awk '{print $1}'); do
+		kill "$f"
+	done
+
 	# Create pause file
 	[[ ! -f "$mpvpause" ]] && touch "$mpvpause"
 
@@ -116,12 +128,10 @@ play() {
 	[[ "$command" == *"--shuffle"* ]] && shuffle=true
 	[[ "$command" == *"--first"* ]] && first=true
 
-	# Clear $command
-	command=$(sed s/play//g <<< "$command")
-
-	case ${command} in 
+	case $command in 
 		*"file"*)
 			# Clear command
+			command=$(sed 's/play//g' <<< "$command")
 			command=$(sed 's/file//g' <<< "$command")
 
 			# Play song
@@ -133,6 +143,7 @@ play() {
 		;;
 		*"folder"*)
 			# Clear command
+			command=$(sed 's/play//g' <<< "$command")
 			command=$(sed 's/folder//g' <<< "$command")
 
 			# Generate a tmp playlist with files listed on directory
@@ -152,25 +163,43 @@ play() {
 		*"playlist"*)
 			# Clear command
 			command=$(sed 's/playlist//g' <<< "$command")
+			command=$(sed 's/play//g' <<< "$command")
 
-			# Dump command playlist into tmp playlist (IDK why mpv don't work when using the playlist specified by the command)
-			for f in $(cat "$command"); do
-				echo "$f" >> "$tmp_playlist"
-			done
+			# Online 
+			if [[ "$command" == *"https"* ]]; then
+				[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
+											--input-ipc-server="$mpvsocket" \
+											--ytdl-raw-options="yes-playlist=" "ytdl://""$command" & 2> "/dev/null"
+				[[   "$shuffle" ]] && mpv --no-terminal --no-video \
+											--input-ipc-server="$mpvsocket" \
+											--shuffle --ytdl-raw-options="yes-playlist=" "ytdl://""$command" & 2> "/dev/null"
 
-			# Play playlist
-			[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
+				# Save mode
+				echo "online_playlist" > "$mpvmode"
+			else # Local
+				# Dump command playlist into tmp playlist (IDK why mpv don't work when using the playlist specified by the command)
+				for f in $(cat "$command"); do
+					echo "$f" >> "$tmp_playlist"
+				done
+
+				# Play playlist
+				[[ ! "$shuffle" ]] && mpv --no-terminal --no-video \
 										--input-ipc-server="$mpvsocket" \
 										--playlist="$tmp_playlist" & 2> "/dev/null"
-			[[   "$shuffle" ]] && mpv --no-terminal --no-video \
-										--input-ipc-server="$mpvsocket" \
-										--shuffle  --playlist="$tmp_playlist" & 2> "/dev/null"
+				[[   "$shuffle" ]] && mpv --no-terminal --no-video \
+											--input-ipc-server="$mpvsocket" \
+											--shuffle  --playlist="$tmp_playlist" & 2> "/dev/null"
 
-			# Save mode
-			echo "playlist" > "$mpvmode"
+				# Save mode
+				echo "local_playlist" > "$mpvmode"
+			fi
+
+			# Start musicd
+			musicd &
 		;;
 		*"search"*)
 			# Clear command
+			command=$(sed 's/play//g' <<< "$command")
 			command=$(sed 's/search//g' <<< "$command")
 
 			# Use search to list musics
@@ -193,11 +222,13 @@ play() {
 				--input-ipc-server="$mpvsocket" "$youtube_url""$song" &
 
 			# Misc
+			music_name="$(cat "$tmp_video_titles_list" | sed -n "$song_number"p)"
 			echo "search" > "$mpvmode"
-			echo "$(cat "$tmp_video_titles_list" | sed -n "$song_number"p)" > "$music_name_path"
+			echo "$music_name" > "$music_name_path"
 		;;
 		*"url"*)
 			# Clear command
+			command=$(sed 's/play//g' <<< "$command")
 			command=$(sed 's/url//g' <<< "$command")
 
 			# Play song
@@ -221,18 +252,25 @@ play() {
 	# Informs the user
 	case $(cat "$mpvmode") in 
 		"search")
+			echo "Mode: Search"
 			echo "Now Playing: $(cat "$music_name_path")"	
 		;;
 		"url")
+			echo "Mode: URL"
 			echo "Now Playing: $(cat "$music_name_path")"
 		;;
-		"playlist")
-			echo "Playlist size: $(cat "$command" | wc -l)"
+		"local_playlist")
+			echo "Mode: Local playlist"
 			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 								| socat - "$mpvsocket") | sed 's/\".*//')"
 		;;
+		"online_playlist")
+			echo "Mode: Online playlist"
+			echo "Now playing: $("$yt" --get-title $(echo  '{ "command": ["get_property", "path"] }' \
+				| socat - "/tmp/1000-runtime-dir/music-socket" | grep -Eo "https://.{0,100}" | sed 's/".*//g'))"
+		;;
 		"folder")
-			echo "Playlist size: $(ls "$command"/ | wc -l)"
+			echo "Mode: Folder"
 			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 								| socat - "$mpvsocket") | sed 's/\".*//')"
 		;;
@@ -276,37 +314,16 @@ fi
 
 # Command
 case "$command" in
-	*"play"*)
-		play
-	;;
-	"pause")
-		pause
-	;;
-	"advance")
-		advance
-	;;
-	"skip")
-		skip
-	;;
-	"return")
-		return_
-	;;
-	"previous")
-		prev
-	;;
-	"prev")
-		prev
-	;;
-	"loop")
-		loop
-	;;
-	*"seek"*)
-		seek
-	;;
-	"info")
-		info
-	;;
-	"stop")
-		stop_
-	;;
+	*"play"*) play ;;
+	"pause") pause ;;
+	"advance") advance ;;
+	"skip") skip ;;
+	"return") return_ ;;
+	"previous") prev ;;
+	"prev") prev ;;
+	"next") next ;;
+	"loop") loop ;;
+	*"seek"*) seek ;;
+	"info") info ;;
+	"stop") stop_ ;;
 esac

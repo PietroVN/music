@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Music daemon
+# Actually this script only update music name
+
+# Wait before start
+sleep 20
+
+# Include music script so we can use paths
+. /usr/local/bin/music NULL
+
+# Vars
+prev_socket_music_name="NULL"
+
+# Main loop
+while true; do
+	# Always update cur music name
+	cur_socket_music_name="$(echo '{ "command": ["get_property", "path"] }' | socat - "$mpvsocket")"
+
+	# Detect
+	if [[ "$cur_socket_music_name" != "$prev_socket_music_name" ]]; then
+
+		case $(cat "$mpvmode") in
+			"online_playlist")
+				music_link="$(echo '{ "command": ["get_property", "path"] }' \
+									| socat - "/tmp/1000-runtime-dir/music-socket" | grep -Eo "https://.{0,100}" | sed 's/".*//g')" 2> "/dev/null"
+	
+				# Pass music title to music name file
+				echo "$(youtube-dl --get-title "$music_link")" > "$music_name_path"
+			;;
+			"local_playlist")
+				music_name="$(basename $(echo '{ "command": ["get_property", "path"] }' \
+										| socat - "$mpvsocket") | sed 's/\".*//')" 2> "/dev/null"
+
+				# Just pass music title to music name file
+				echo "$music_name" > "$music_name_path"
+			;;
+		esac
+
+		# Update prev music name
+		prev_socket_music_name="$cur_socket_music_name"
+	fi
+
+	# Quit
+	[[ "$(pgrep mpv)" ]] || exit
+done
