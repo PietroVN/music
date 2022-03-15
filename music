@@ -46,7 +46,7 @@ stop_() {
 	# Clear previous files
 	[[ -f "$mpvsocket" ]] && rm "$mpvsocket"
 	[[ -f "$mpvmode" ]] && rm "$mpvmode"
-	[[ -f "$music_name" ]] && rm "$music_name"
+	[[ -f "$music_name_path" ]] && rm "$music_name_path"
 	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
 	[[ -f "$mpvpause" ]] && rm "$mpvpause"
 
@@ -112,7 +112,7 @@ play() {
 	# Clear previous files
 	[[ -f "$mpvsocket" ]] && rm "$mpvsocket"
 	[[ -f "$mpvmode" ]] && rm "$mpvmode"
-	[[ -f "$music_name" ]] && rm "$music_name"
+	[[ -f "$music_name_path" ]] && rm "$music_name_path"
 	[[ -f "$tmp_playlist" ]] && rm "$tmp_playlist"
 	[[ -f "$mpvpause" ]] && rm "$mpvpause"
 
@@ -260,14 +260,15 @@ play() {
 			echo "Now Playing: $(cat "$music_name_path")"
 		;;
 		"local_playlist")
+			# Wait for music_name update
+			sleep 11
 			echo "Mode: Local playlist"
-			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
-								| socat - "$mpvsocket") | sed 's/\".*//')"
+			echo "Now Playing: $music_name"
 		;;
 		"online_playlist")
+			sleep 11
 			echo "Mode: Online playlist"
-			echo "Now playing: $("$yt" --get-title $(echo  '{ "command": ["get_property", "path"] }' \
-				| socat - "/tmp/1000-runtime-dir/music-socket" | grep -Eo "https://.{0,100}" | sed 's/".*//g'))"
+			echo "Now Playing: $(cat "$music_name_path")"
 		;;
 		"folder")
 			echo "Mode: Folder"
