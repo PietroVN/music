@@ -6,7 +6,7 @@
 sleep 10
 
 # Include music script so we can use paths
-. /usr/local/bin/music NULL
+. music
 
 # Vars
 prev_socket_music_name="NULL"

@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
-# Simple Music Script
-# Author: PietroVN
-# Requirements: mpv,youtube-dl(or any fork | optional), sed, curl(optional), search(optional)
-# Usage:
-# 	music <command>
-#	play file <path to file>				| Play local music file
-#	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist
-# 	play playlist <full path to txt file>	| Use plain text file or a online playlist (auto detected!)
-#	play url <url>							| Play specific url
-#	play search <song to search>			| Search for specific song online
-#	next 									| Skip current song
-#	prev 									| Return to previous song
-# 	seek  <time> 							| Seek for the specified time
-# 	advance									| Advance music 5 seconds
-# 	return 									| Return music 5 seconds
-#	pause									| Pause music
-# 	loop									| Loop music (will stay active until reboot or you disable it)
-# 	stop									| Stop current song						
-# Parameters:
-# --shuffle									| Works with 'playlist:' and 'folder:' start playlist in a random order
-# --first									| Works with 'search:' play the first song returned from search
+#################################################################################################################################
+# Author: Waltz															#
+# Deps: mpv, youtube-dl(or any fork), sed, curl, search, socat  								#
+#################################################################################################################################
+# Usage:															#
+# 	music <command>														#
+#	play file <path to file>			| Play local music file							#
+#	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist				#
+# 	play playlist <full path to txt file>		| Use plain text file or a online playlist (auto detected!)		#
+#	play url <url>					| Play specific url							#
+#	play search <song to search>			| Search for specific song online					#
+#	next 						| Skip current song							#
+#	prev 						| Return to previous song						#
+# 	seek  <time> 					| Seek for the specified time						#
+# 	advance						| Advance music 5 seconds						#
+# 	return 						| Return music 5 seconds						#
+#	pause						| Pause music								#
+# 	loop						| Loop music (will stay active until reboot or you disable it)		#
+# 	stop						| Stop current song							#
+#################################################################################################################################
+# Parameters:															#
+# --shuffle						| Works with 'playlist:' and 'folder:' start playlist in a random order #
+# --first						| Works with 'search:' play the first song returned from search		#
+#################################################################################################################################
 
-# Include search
-. /usr/local/bin/search
+
+# Include search library
+. search
 
 # get args (music name | command)
 command=$@
@@ -32,15 +36,14 @@ mpvsocket="$XDG_RUNTIME_DIR/music-socket"
 mpvpause="$XDG_RUNTIME_DIR/music-paused"
 mpvloop="$XDG_RUNTIME_DIR/music-loop"
 mpvmode="$XDG_RUNTIME_DIR/music-mode"
-#musicd="/usr/local/bin/musicd"
 tmp_playlist="$XDG_RUNTIME_DIR/tmp_playlist.txt"
 music_name_path="$XDG_RUNTIME_DIR/name"
 
 # Youtube (Youtube downloader)
-yt=youtube-dl
+yt=youtube-dl			# yt-dlp have a binary named youtube-dl for compatibility reasons
 MUSICS_FOLDER=~/musics
 
-stop_() {
+_stop() {
 	echo '{ "command": ["quit"] }' | socat - "$mpvsocket" > "/dev/null"
 
 	# Clear previous files
@@ -56,7 +59,7 @@ stop_() {
 	done
 }
 
-info() {
+_info() {
 	if [[ $(cat "$mpvmode") == *"LOCAL"* ]]; then
 		echo "Music name: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 							| socat - "$mpvsocket") | sed 's/\".*//')"
@@ -65,30 +68,30 @@ info() {
 	fi
 }
 
-seek() {
+_seek() {
 	sed "s/SEEK/$(echo ${command} | awk '{print $2}')/g" <<< '{ "command": ["set_property", "playback-time", "SEEK"] }'  \
 									| socat - "$mpvsocket" > "/dev/null"
 }
 
-advance() {
+_advance() {
 	echo '{ "command": ["seek", "+5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Advanced: 5 seconds"
 }
 
-next() {		
+_next() {
 	echo 'playlist-next' | socat - "$mpvsocket" > "/dev/null"
 }
 
-return_() {
+_return_() {
 	echo '{ "command": ["seek", "-5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Returned: 5 seconds"
 }
 
-prev() {
+_prev() {
 	echo 'playlist-prev' | socat - "$mpvsocket" > "/dev/null"
 }
 
-pause() {
+_pause() {
 	# Checks to determine if music will be paused or unpaused
 	if [[ $(cat "$mpvpause" | wc -l) -le "0" ]]; then
 		pause=yes
@@ -105,7 +108,7 @@ pause() {
 	echo "$pause" > "$mpvpause"
 }
 
-play() {
+_play() {
 	# Kill previous mpv instance
 	echo '{ "command": ["quit"] }' | socat - "$mpvsocket" > "/dev/null"
 
@@ -128,7 +131,7 @@ play() {
 	[[ "$command" == *"--shuffle"* ]] && shuffle=true
 	[[ "$command" == *"--first"* ]] && first=true
 
-	case $command in 
+	case $command in
 		*"file"*)
 			# Clear command
 			command=$(sed 's/play//g' <<< "$command")
@@ -215,11 +218,11 @@ play() {
 			[[ -z "$first" ]] || song_number=1
 
 			# Select song url
-			song=$(cat "$tmp_videos_list" | sed -n "$song_number"p)
+			song=$(cat "$tmp_video_list" | sed -n "$song_number"p)
 
 			# Play song
 			mpv --no-terminal --no-video \
-				--input-ipc-server="$mpvsocket" "$youtube_url""$song" &
+				--input-ipc-server="$mpvsocket" "$yt_url""$song" &
 
 			# Misc
 			music_name="$(cat "$tmp_video_titles_list" | sed -n "$song_number"p)"
@@ -281,7 +284,7 @@ play() {
 	esac
 }
 
-loop() {
+_loop() {
 	# Conditions to determine if loop will be enabled or disabled
 	if [[ ! -f "$mpvloop" ]]; then
 		loop=yes
@@ -315,16 +318,16 @@ fi
 
 # Command
 case "$command" in
-	*"play"*) play ;;
-	"pause") pause ;;
-	"advance") advance ;;
-	"skip") skip ;;
-	"return") return_ ;;
-	"previous") prev ;;
-	"prev") prev ;;
-	"next") next ;;
-	"loop") loop ;;
-	*"seek"*) seek ;;
-	"info") info ;;
-	"stop") stop_ ;;
+	*"play"*)	_play ;;
+	"pause")	_pause ;;
+	"advance") 	_advance ;;
+	"skip") 	_skip ;;
+	"return") 	_return ;;
+	"previous") 	_prev ;;
+	"prev") 	_prev ;;
+	"next") 	_next ;;
+	"loop") 	_loop ;;
+	*"seek"*) 	_seek ;;
+	"info") 	_info ;;
+	"stop") 	_stop ;;
 esac

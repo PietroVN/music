@@ -8,7 +8,7 @@
 
 # Soft link to /usr/local/bin
 ln -s $(pwd)/music /usr/local/bin/music
-ln -s $(pwd)/music /usr/local/bin/musicd
+ln -s $(pwd)/musicd /usr/local/bin/musicd
 ln -s $(pwd)/deps/search/search /usr/local/bin/search
 
 # Give executable permissions
