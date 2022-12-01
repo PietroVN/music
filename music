@@ -82,7 +82,7 @@ _next() {
 	echo 'playlist-next' | socat - "$mpvsocket" > "/dev/null"
 }
 
-_return_() {
+_return() {
 	echo '{ "command": ["seek", "-5"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Returned: 5 seconds"
 }
@@ -323,7 +323,7 @@ case "$command" in
 	"advance") 	_advance ;;
 	"skip") 	_skip ;;
 	"return") 	_return ;;
-	"previous") 	_prev ;;
+	"previous") _prev ;;
 	"prev") 	_prev ;;
 	"next") 	_next ;;
 	"loop") 	_loop ;;
