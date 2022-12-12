@@ -1,35 +1,40 @@
 #!/usr/bin/env bash
-#################################################################################################################################
-# Author: Waltz															#
-# Deps: mpv, youtube-dl(or any fork), sed, curl, search, socat  								#
-#################################################################################################################################
-# Usage:															#
-# 	music <command>														#
-#	play file <path to file>			| Play local music file							#
-#	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist				#
-# 	play playlist <full path to txt file>		| Use plain text file or a online playlist (auto detected!)		#
-#	play url <url>					| Play specific url							#
-#	play search <song to search>			| Search for specific song online					#
-#	next 						| Skip current song							#
-#	prev 						| Return to previous song						#
-# 	seek  <time> 					| Seek for the specified time						#
-# 	advance						| Advance music 5 seconds						#
-# 	return 						| Return music 5 seconds						#
-#	pause						| Pause music								#
-# 	loop						| Loop music (will stay active until reboot or you disable it)		#
-# 	stop						| Stop current song							#
-#################################################################################################################################
-# Parameters:															#
-# --shuffle						| Works with 'playlist:' and 'folder:' start playlist in a random order #
-# --first						| Works with 'search:' play the first song returned from search		#
-#################################################################################################################################
+#####################################################################################################################
+# Author: Waltz																										#
+# Deps: mpv, youtube-dl(or any fork), sed, curl, search, socat  													#
+#####################################################################################################################
+# Usage:																											#
+# 	music <command>																									#
+#	play file <path to file>			| Play local music file														#
+#	play folder <full path to folder> 		| Put all songs in a folder on a temp playlist							#
+# 	play playlist <full path to txt file>		| Use plain text file or a online playlist (auto detected!)			#
+#	play url <url>					| Play specific url																#
+#	play search <song to search>			| Search for specific song online										#
+#	next 						| Skip current song																	#
+#	prev 						| Return to previous song															#
+# 	seek  <time> 					| Seek for the specified time													#
+# 	advance						| Advance music 5 seconds															#
+# 	return 						| Return music 5 seconds															#
+#	pause						| Pause music																		#
+# 	loop						| Loop music (will stay active until reboot or you disable it)						#
+# 	stop						| Stop current song																	#
+#####################################################################################################################
+# Parameters:																										#
+# --shuffle						| Works with 'playlist:' and 'folder:' start playlist in a random order				#
+# --first						| Works with 'search:' play the first song returned from search						#
+#####################################################################################################################
+# **TODO List**
+# TODO: Change the way parameters Works
+# **END**
 
+# Options
+notify="1"
 
 # Include search library
 . search
 
 # get args (music name | command)
-command=$@
+command="$@"
 
 # Enviroment
 mpvsocket="$XDG_RUNTIME_DIR/music-socket"
@@ -256,30 +261,37 @@ _play() {
 	case $(cat "$mpvmode") in 
 		"search")
 			echo "Mode: Search"
-			echo "Now Playing: $(cat "$music_name_path")"	
+			echo "Now Playing: $(cat $music_name_path)"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $(cat $music_name_path)"
 		;;
 		"url")
 			echo "Mode: URL"
-			echo "Now Playing: $(cat "$music_name_path")"
+			echo "Now Playing: $(cat $music_name_path)"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $(cat $music_name_path)"
 		;;
 		"local_playlist")
 			# Wait for music_name update
 			sleep 11
 			echo "Mode: Local playlist"
 			echo "Now Playing: $music_name"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $music_name)"
 		;;
 		"online_playlist")
 			sleep 11
 			echo "Mode: Online playlist"
 			echo "Now Playing: $(cat "$music_name_path")"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $(cat $music_name_path)"
 		;;
 		"folder")
 			echo "Mode: Folder"
 			echo "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
 								| socat - "$mpvsocket") | sed 's/\".*//')"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $(basename $(echo '{ "command": ["get_property", "path"] }' \
+								| socat - "$mpvsocket") | sed 's/\".*//')"
 		;;
 		*)
 			echo "Now Playing: $(basename "$command")"
+			[[ -z "$notify" ]] || notify-send "Now Playing: $(cat $music_name_path)"
 		;;
 	esac
 }
