@@ -22,7 +22,7 @@ mpvpause="$XDG_RUNTIME_DIR/music-paused"
 mpvloop="$XDG_RUNTIME_DIR/music-loop"
 mpvmode="$XDG_RUNTIME_DIR/music-mode"
 tmp_playlist="$XDG_RUNTIME_DIR/tmp_playlist.txt"
-music_name_path="$XDG_RUNTIME_DIR/name"
+music_name_path="$XDG_RUNTIME_DIR/music-name"
 
 # Youtube (Youtube downloader)
 yt="youtube-dl"			# yt-dlp have a binary named youtube-dl for compatibility reasons
@@ -126,7 +126,7 @@ _play() {
 			echo "$($yt --get-title $command)" > "$music_name_path"
 		;;
 
-		"*")
+		*)
 			# Clear command
 			command="$(sed 's/play//g' <<< $command)"
 
