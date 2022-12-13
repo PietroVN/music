@@ -16,4 +16,4 @@ Optional (only necessary if playing musics that you don't have downloaded):
 * Run install.sh
 
 # Usage
-* Read the source file
+* music -help
