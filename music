@@ -111,22 +111,22 @@ _play() {
 
 	# Call stop to cleanup files
 	_stop
-
+	
 	case $command in
-		*"https:"*)
+		*"https://"*)
 			# Clear command
-			command=$(sed 's/play//g' <<< "$command")
+			command="$(sed 's/play//g' <<< $command)"
+			command="$(sed 's/ //g' <<< $command)"
 
 			# Play song
-			mpv --no-terminal --no-video \
-				--input-ipc-server="$mpvsocket" "$command" &
+			mpv --no-terminal --no-video --input-ipc-server="$mpvsocket" "$command" &
 
 			# Save name
 			echo "url" > "$mpvmode"
-			echo "$($yt --get-title $command)" > "$music_name_dir"
+			echo "$($yt --get-title $command)" > "$music_name_path"
 		;;
 
-		*)
+		"*")
 			# Clear command
 			command="$(sed 's/play//g' <<< $command)"
 
