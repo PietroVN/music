@@ -15,6 +15,11 @@
 [[ -d "$@" ]] || echo "Invalid directory"
 [[ -d "$@" ]] || exit 0
 
+# Download search dependency
+[[ -d "deps" ]] && rm -rf "deps"
+mkdir "$deps
+curl "https://raw.githubusercontent.com/Wa1t5/search/main/search" > "deps/search"
+
 # Soft link to path
 ln -s "$(pwd)/music" "$@/music"
 ln -s "$(pwd)/deps/search/search" "$@/search"

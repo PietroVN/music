@@ -29,9 +29,9 @@ yt="youtube-dl"			# yt-dlp have a binary named youtube-dl for compatibility reas
 MUSICS_FOLDER="~/musics"
 
 _help() {
-	echo "============================================================="
+	echo "======================================================================="
 	echo "Music script"
-	echo "============================================================="
+	echo "======================================================================="
 	echo "music play <song name/url>        | Play"
 	echo "music loop                        | Toggle loop"
 	echo "music stop                        | Stop"
@@ -39,9 +39,13 @@ _help() {
 	echo "music back <seconds>              | Return music in seconds"
 	echo "music info                        | Current music info"
 	echo "music seek <seconds>              | Go to specific second"
-	echo "============================================================="
+	echo "========================================================================"
+	echo "Options:"
+	echo "========================================================================"
+	echo "-m/--max-videos                   | Limit how much songs will be visible"
+	echo "========================================================================="
 	echo "Author: Waltz"
-	echo "============================================================="
+	echo "========================================================================="
 }
 
 _stop() {
@@ -131,16 +135,11 @@ _play() {
 			command="$(sed 's/play//g' <<< $command)"
 
 			# Use search to list musics
-			[[ -z "$first" ]] || search _youtube:"$command" > "/dev/null"
-			[[ -z "$first" ]] && search _youtube:"$command"
-			[[ -z "$first" ]] && echo ""
+			search youtube "$command"
 
 			# Ask the user to choose a song
-			[[ -z "$first" ]] && echo "Enter your choice:"
-			[[ -z "$first" ]] && read song_number
-
-			# Pick first song 
-			[[ -z "$first" ]] || song_number=1
+			echo "Enter your choice:"
+			read song_number
 
 			# Select song url
 			song="$(cat "$tmp_video_list" | sed -n "$song_number"p)"
