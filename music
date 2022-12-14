@@ -167,11 +167,11 @@ _play() {
 
 _loop() {
 	# Conditions to determine if loop will be enabled or disabled
-	if [[ ! -f "$mpvloop" ]]; then
-		loop=yes
-		rm "$mpvloop"
-	elif [[ $(cat "$mpvloop") == "yes" ]]; then
+	if [[ -f "$mpvloop" ]]; then
 		loop=no
+		rm "$mpvloop"
+	elif [[ ! -f "$mpvloop" ]]; then
+		loop=yes
 		touch "$mpvloop"
 	fi
 
