@@ -25,5 +25,5 @@ ln -s "$(pwd)/music" "$@/music"
 ln -s "$(pwd)/deps/search/search" "$@/search"
 
 # Give executable permissions
-chmod +x /usr/local/bin/music
-chmod +x /usr/local/bin/search
+chmod +x "$@/music"
+chmod +x "$@/search"
