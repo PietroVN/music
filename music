@@ -81,7 +81,7 @@ _advance() {
 
 _back() {
 	back="$(echo $command | awk '{print $2}')"
-	echo "s/BACK/$back/g" <<< '{ "command": ["seek", "-BACK"] }' | socat - "$mpvsocket" > "/dev/null"
+	sed "s/BACK/$back/g" <<< '{ "command": ["seek", "-BACK"] }' | socat - "$mpvsocket" > "/dev/null"
 	echo "Returned: $back seconds"
 }
 
