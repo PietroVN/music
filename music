@@ -98,10 +98,10 @@ _prev() {
 _pause() {
 	# Checks to determine if music will be paused or unpaused
 	if [[ -f "$mpvpause" ]]; then
-		pause=yes
+		pause=no
 		rm "$mpvpause"
 	elif [[ ! -f "$mpvpause" ]]; then
-		pause=no
+		pause=yes
 		touch "$mpvpause"
 	fi
 
@@ -191,15 +191,15 @@ fi
 # Command
 case "$command" in
 	*"play"*)		_play ;;
-	*"pause"*)		_pause ;;
-	*"advance"*)	_advance ;;
-	*"skip"*)		_skip ;;
-	*"back"*) 		_back ;;
+	"pause")		_pause ;;
+	"advance"*)		_advance ;;
+	"skip")			_skip ;;
+	"back"*)		_back ;;
 	#*"prev"*)		_prev ;;
 	#*"next"*)		_next ;;
-	*"loop"*)		_loop ;;
-	*"seek"*)		_seek ;;
-	*"info"*)		_info ;;
-	*"stop"*) 		_stop ;;
-	*"help"*)		_help ;;
+	"loop")			_loop ;;
+	"seek"*)		_seek ;;
+	"info")			_info ;;
+	"stop") 		_stop ;;
+	"help")			_help ;;
 esac
